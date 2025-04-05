@@ -5,6 +5,7 @@ BUILD_DIR = target
 # Alvo principal
 build: $(BUILD_DIR)/main.o $(BUILD_DIR)/lex.yy.o
 	g++ -o $(BUILD_DIR)/goianinha $(BUILD_DIR)/main.o $(BUILD_DIR)/lex.yy.o
+	$(MAKE) clean_intermediates
 
 # Compilação do arquivo lex.yy.o
 $(BUILD_DIR)/lex.yy.o: $(BUILD_DIR)/lex.yy.cpp
@@ -22,6 +23,10 @@ $(BUILD_DIR)/main.o: $(SRC_DIR)/main.cpp | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# Limpeza dos arquivos gerados
+# Limpeza dos arquivos intermediários, exceto o executável
+clean_intermediates:
+	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/lex.yy.cpp
+
+# Limpeza completa (inclui o executável)
 clean:
 	rm -rf $(BUILD_DIR)
