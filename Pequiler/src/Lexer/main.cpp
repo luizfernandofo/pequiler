@@ -16,12 +16,13 @@ int main(int argc, char *argv[])
     }
 
     yyFlexLexer* lexer = new yyFlexLexer(&inputFile, nullptr);
-    while(lexer->yylex() != 0) {
-        std::cout << "Token: " << lexer->YYText() << " line: " << lexer->lineno() << std::endl;
+    int yylex_res = lexer->yylex(); 
+    while (yylex_res != 0) {
+        std::cout << "Encontrado o lexema " << lexer->YYText() << " pertencente ao token de codigo " << yylex_res << " linha " << lexer->lineno() << std::endl;
+        yylex_res = lexer->yylex();
     }
 
     delete lexer;
     inputFile.close();
-    std::cout << "Lexing completed successfully." << std::endl;
     return 0;
 }

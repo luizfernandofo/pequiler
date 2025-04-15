@@ -11,7 +11,7 @@ build: $(BUILD_DIR)/main.o $(BUILD_DIR)/lex.yy.o
 # Compilação do arquivo lex.yy.o
 $(BUILD_DIR)/lex.yy.o: $(BUILD_DIR)/lex.yy.cpp
 	mkdir -p $(BUILD_DIR)
-	g++ -c $(BUILD_DIR)/lex.yy.cpp -o $(BUILD_DIR)/lex.yy.o
+	g++ -c $(BUILD_DIR)/lex.yy.cpp -I $(SRC_DIR)/ -o $(BUILD_DIR)/lex.yy.o
 
 # Geração do arquivo lex.yy.cpp
 $(BUILD_DIR)/lex.yy.cpp: $(SRC_DIR)/goianinha.l
