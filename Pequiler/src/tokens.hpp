@@ -32,6 +32,7 @@ enum TokenType {
     TOKEN_MULTIPLICACAO,
     TOKEN_DIVISAO,
     TOKEN_ATRIBUICAO,
+    TOKEN_NEGACAO,
 
     // Pontuação
     TOKEN_PONTO_VIRGULA,
