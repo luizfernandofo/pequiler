@@ -7,6 +7,7 @@
 void yyerror(const char *s);
 
 extern int yylex();
+extern int yylineno;
 %}
 
 %token TOKEN_INT_LITERAL TOKEN_ID TOKEN_STRING_LITERAL
@@ -153,5 +154,5 @@ lista_expr:
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "ERRO: %s\n", s);
+    fprintf(stderr, "ERRO: %s %d\n", s, yylineno);
 }
