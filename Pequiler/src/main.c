@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "ast.h"
 
 extern int yyparse();
 extern FILE *yyin;
+extern ASTNode *ast_root;
 
 int main(int argc, char **argv)
 {
@@ -20,6 +22,11 @@ int main(int argc, char **argv)
     if (yyparse() != 0) {
         fclose(yyin);
         return 1;
+    }
+
+    if (ast_root) {
+        ast_print(ast_root, 0);
+        ast_free(ast_root);
     }
 
     fclose(yyin);

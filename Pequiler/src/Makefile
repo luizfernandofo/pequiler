@@ -1,17 +1,18 @@
 CC = gcc
 EXE = target/goianinha
 
-CFLAGS = -g -Wall -std=c99
+CFLAGS = -g -Wall -I$(dir $(MAIN_SRC))
 
 LEXER_SRC = goianinha.l
 PARSER_SRC = goianinha.y
 MAIN_SRC = main.c
+AST_SRC = ast.c
 
 LEXER_GEN = target/lexer.c
 PARSER_GEN = target/parser.c
 PARSER_HEADER = target/parser.h
 
-OBJS = target/main.o target/lexer.o target/parser.o
+OBJS = target/main.o target/lexer.o target/parser.o target/ast.o
 
 .PHONY: all clean
 
@@ -21,15 +22,18 @@ $(EXE): $(OBJS)
 	@mkdir -p target
 	$(CC) $(CFLAGS) -o $(EXE) $(OBJS)
 
-target/main.o: $(MAIN_SRC)
+target/main.o: $(MAIN_SRC) ast.h
 	@mkdir -p target
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-target/lexer.o: $(LEXER_GEN)
+target/lexer.o: $(LEXER_GEN) ast.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-target/parser.o: $(PARSER_GEN)
+target/parser.o: $(PARSER_GEN) ast.h
 	$(CC) $(CFLAGS) -c -o $@ $(PARSER_GEN:.h=.c)
+
+target/ast.o: ast.c ast.h
+	$(CC) $(CFLAGS) -c -o $@ ast.c
 
 # Ensure Bison runs before Flex
 $(LEXER_GEN): $(LEXER_SRC) $(PARSER_HEADER)

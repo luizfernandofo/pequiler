@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.h"
+#include "ast.h"
+
+extern int yylineno;
+extern char* yytext;
+extern YYSTYPE yylval;
 
 // Variável global para armazenar a linha inicial de um comentário
 int start_comment_line = 0;
@@ -76,7 +81,7 @@ WS [ \t]+
 <COMMENT>"*"+"/"            BEGIN(INITIAL);
 <COMMENT><<EOF>>            {
                                 printf("ERRO: COMENTARIO NAO TERMINA %d\n", start_comment_line);
-                                return 0;
+                                exit(1);
                             }
 
 "programa"                  {return read_token(yytext);}
@@ -115,24 +120,34 @@ WS [ \t]+
 "}"                         {return read_token(yytext);}
 
 {ID}                        {
+                                yylval.str = strdup(yytext);
+                                if (yylval.str == NULL) {
+                                    fprintf(stderr, "ERRO: Falha de alocação de memória na linha %d\n", yylineno);
+                                    exit(1);
+                                }
                                 return TOKEN_ID;
                             }
 
 {INT}                       {
+                                yylval.ival = atoi(yytext);
                                 return TOKEN_INT_LITERAL;
                             }
                             
 \"([^\"\n])*\n              {
                                 printf("ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA %d\n", yylineno-1);
-                                return 0;
+                                exit(1);
                             }
 
 {STRING}                    {
-                                //yylval->build< std::string >( yytext );
-                                return TOKEN_ID;
+                                yylval.str = strdup(yytext);
+                                if (yylval.str == NULL) {
+                                    fprintf(stderr, "ERRO: Falha de alocação de memória na linha %d\n", yylineno);
+                                    exit(1);
+                                }
+                                return TOKEN_STRING_LITERAL;
                             }
 
 .                           {
                                 printf("ERRO: CARACTERE INVALIDO %d\n", yylineno);
-                                return 0;
+                                exit(1);
                             }

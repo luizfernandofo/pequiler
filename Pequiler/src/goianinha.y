@@ -1,16 +1,35 @@
 %require "3.8"
 %debug
+
+%code requires {
+#include "ast.h"
+}
+
 %{
-#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include "ast.h"
+
+ASTNode *ast_root = NULL;
 
 void yyerror(const char *s);
 
 extern int yylex();
 extern int yylineno;
+
 %}
 
-%token TOKEN_INT_LITERAL TOKEN_ID TOKEN_STRING_LITERAL
+%union {
+    ASTNode *node;
+    char *str;
+    int ival;
+}
+
+%type <node> programa decl_func_var decl_prog decl_var decl_func lista_param lista_param_cont bloco lista_decl_var tipo lista_comando comando expr or_expr and_expr eq_expr desig_expr add_expr mul_expr un_expr prim_expr lista_expr
+
+%token <str> TOKEN_ID TOKEN_STRING_LITERAL
+%token <ival> TOKEN_INT_LITERAL
 %token TOKEN_PROGRAMA TOKEN_CAR TOKEN_INT TOKEN_RETORNE TOKEN_LEIA TOKEN_ESCREVA
 %token TOKEN_SE TOKEN_ENTAO TOKEN_SENAO TOKEN_ENQUANTO TOKEN_EXECUTE
 %token TOKEN_SOMA TOKEN_SUBTRACAO TOKEN_MULTIPLICACAO TOKEN_DIVISAO TOKEN_ATRIBUICAO
@@ -25,12 +44,17 @@ extern int yylineno;
 %%
 
 programa:
-    decl_func_var decl_prog
+    decl_func_var decl_prog { ast_root = ast_create(DECL_BEGIN_PROG, NULL, 0, $1, NULL, $2); $$ = ast_root; }
     ;
 
 decl_func_var:
-    %empty
-    | tipo TOKEN_ID decl_var TOKEN_PONTO_VIRGULA decl_func_var
+    %empty { $$ = NULL; }
+    | tipo TOKEN_ID decl_var TOKEN_PONTO_VIRGULA decl_func_var {
+        printf("Declaring function variable: %s\n", $2);
+        ASTNode *var = ast_create(DECL_VAR, $2, 0, $1, $3, NULL);
+        $$ = ast_create(STMT_DECL, NULL, 0, var, $5, NULL);
+    }
+
     | tipo TOKEN_ID decl_func decl_func_var
     ;
 
