@@ -21,6 +21,8 @@ TableEntry* check_if_var_exists_in_current_scope(SymbolTable *table, const char 
 TableEntry* check_if_func_exists_in_current_scope(SymbolTable *table, const char *name);
 TableEntry* add_var_to_current_scope(SymbolTable *table, const char *name, int type);
 TableEntry* add_func_to_current_scope(SymbolTable *table, const char *name, int type);
+TableEntry *get_last_func_in_current_scope(SymbolTable *table);
+TableEntry *check_if_arg_exists_in_func(TableEntry *func, const char *name);
 void add_arg_to_function(TableEntry *func, TableEntry *arg);
 void free_symbol_table(SymbolTable *table);
 void create_new_scope(SymbolTable *table);
@@ -93,27 +95,25 @@ decl_func_var:
         $$ = ast_create(STMT_DECL, NULL, 0, var, $5, NULL, @2.first_line);
     }
 
-    | tipo TOKEN_ID decl_func decl_func_var {
-        ASTNode *func = ast_create(DECL_FUNC, $2, 0, $1, NULL, $3, @2.first_line);
-
+    | tipo TOKEN_ID {
         TableEntry *existing_func = check_if_func_exists_in_current_scope(symbol_table, $2);
         if (existing_func != NULL) {
             printf("Função '%s' já declarada no escopo atual\n", $2);
             return 0;
         }
         else {
-            TableEntry* first_func_in_queue = add_func_to_current_scope(symbol_table, $2, $1->type);
-            
-            ASTNode *func = $3;
+            add_func_to_current_scope(symbol_table, $2, $1->type);
         }
-
-        $$ = ast_create(STMT_DECL, NULL, 0, func, $4, NULL, @2.first_line);
+    } decl_func decl_func_var {
+        ASTNode *func = ast_create(DECL_FUNC, $2, 0, $1, NULL, $4, @2.first_line);
+        $$ = ast_create(STMT_DECL, NULL, 0, func, $5, NULL, @2.first_line);
     }
     ;
 
 decl_prog:
+    { create_new_scope(symbol_table); }
     TOKEN_PROGRAMA bloco {
-        $$ = ast_create(DECL_PROGRAMA, NULL, 0, NULL, NULL, $2, @1.first_line);
+        $$ = ast_create(DECL_PROGRAMA, NULL, 0, NULL, NULL, $3, @1.first_line);
     }
     ;
 
@@ -139,10 +139,30 @@ lista_param:
 
 lista_param_cont:
     tipo TOKEN_ID {
+        TableEntry *last_inserted_func = get_last_func_in_current_scope(symbol_table);
+        TableEntry *existing_arg = check_if_arg_exists_in_func(last_inserted_func, $2);
+        if (existing_arg != NULL) {
+            printf("Argumento '%s' já declarado na função '%s'\n", $2, last_inserted_func->name);
+            return 0;
+        }
+        TableEntry *arg = create_table_entry($2, ST_ARG, $1->type);
+        add_arg_to_function(last_inserted_func, arg);
+
         $$ = ast_create(DECL_ARG, $2, 0, $1, NULL, NULL, @2.first_line);
     }
-    | tipo TOKEN_ID TOKEN_VIRGULA lista_param_cont {
-        $$ = ast_create(DECL_ARG, $2, 0, $1, $4, NULL, @2.first_line);
+    | tipo TOKEN_ID {
+
+        TableEntry *last_inserted_func = get_last_func_in_current_scope(symbol_table);
+        TableEntry *existing_arg = check_if_arg_exists_in_func(last_inserted_func, $2);
+        if (existing_arg != NULL) {
+            printf("Argumento '%s' já declarado na função '%s'\n", $2, last_inserted_func->name);
+            return 0;
+        }
+        TableEntry *arg = create_table_entry($2, ST_ARG, $1->type);
+        add_arg_to_function(last_inserted_func, arg);
+
+    } TOKEN_VIRGULA lista_param_cont {
+        $$ = ast_create(DECL_ARG, $2, 0, $1, $5, NULL, @2.first_line);
     }
     ;
 
@@ -157,6 +177,28 @@ lista_decl_var:
     | tipo TOKEN_ID decl_var TOKEN_PONTO_VIRGULA lista_decl_var {
         ASTNode *var = ast_create(DECL_VAR, $2, 0, $1, $3, NULL, @2.first_line);
         $$ = ast_create(STMT_DECL, NULL, 0, var, $5, NULL, @2.first_line);
+
+        TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, $2);
+        if (existing_var != NULL) {
+            printf("Variável '%s' já declarada no escopo atual\n", $2);
+            return 0;
+        }
+        else {
+            TableEntry* first_var_in_queue = add_var_to_current_scope(symbol_table, $2, $1->type);
+
+            ASTNode *var = $3;
+            while (var != NULL) {
+                TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, var->text);
+                if (existing_var != NULL) {
+                    printf("Variável '%s' já declarada no escopo atual\n", $2);
+                    return 0;
+                }
+                else {
+                    add_var_to_current_scope(symbol_table, var->text, first_var_in_queue->type);
+                }
+                var = var->right;
+            }
+        }
     }
     ;
 

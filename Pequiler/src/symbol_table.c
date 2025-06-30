@@ -67,6 +67,28 @@ TableEntry* add_func_to_current_scope(SymbolTable *table, const char *name, int 
     return entry;
 }
 
+TableEntry *get_last_func_in_current_scope(SymbolTable *table) {
+    if (!table || !table->current_scope) return NULL;
+    TableEntry *func = table->current_scope->funcs;
+    if (!func) return NULL;
+    while (func->next) {
+        func = func->next;
+    }
+    return func;
+}
+
+TableEntry *check_if_arg_exists_in_func(TableEntry *func, const char *name) {
+    if (!func || !func->args) return NULL;
+    TableEntry *arg = func->args;
+    while (arg) {
+        if (strcmp(arg->name, name) == 0) {
+            return arg;
+        }
+        arg = arg->next;
+    }
+    return NULL;
+}
+
 void add_arg_to_function(TableEntry *func, TableEntry *arg) {
     if (!func || !arg) return;
     arg->next = func->args;
