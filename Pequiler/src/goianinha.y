@@ -155,64 +155,112 @@ comando:
     ;
 
 expr:
-    or_expr
-    | TOKEN_ID TOKEN_ATRIBUICAO expr
+    or_expr { $$ = $1; }
+    | TOKEN_ID TOKEN_ATRIBUICAO expr {
+        $$ = ast_create(EXPR_ASSIGN, $1, 0, $3, NULL, NULL, @1.first_line);
+    }
     ;
 
 or_expr:
-    or_expr TOKEN_OU and_expr
-    | and_expr
+    or_expr TOKEN_OU and_expr {
+        $$ = ast_create(EXPR_OR, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | and_expr { $$ = $1; }
     ;
 
 and_expr:
-    and_expr TOKEN_E eq_expr
-    | eq_expr
+    and_expr TOKEN_E eq_expr {
+        $$ = ast_create(EXPR_AND, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | eq_expr { $$ = $1; }
     ;
 
 eq_expr:
-    eq_expr TOKEN_IGUAL desig_expr
-    | eq_expr TOKEN_DIFERENTE desig_expr
-    | desig_expr
+    eq_expr TOKEN_IGUAL desig_expr {
+        $$ = ast_create(EXPR_EQ, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | eq_expr TOKEN_DIFERENTE desig_expr {
+        $$ = ast_create(EXPR_NEQ, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | desig_expr { $$ = $1; }
     ;
 
 desig_expr:
-    desig_expr TOKEN_MENOR add_expr
-    | desig_expr TOKEN_MAIOR add_expr
-    | desig_expr TOKEN_MAIOR_IGUAL add_expr
-    | desig_expr TOKEN_MENOR_IGUAL add_expr
-    | add_expr
+    desig_expr TOKEN_MENOR add_expr {
+        $$ = ast_create(EXPR_LT, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | desig_expr TOKEN_MAIOR add_expr {
+        $$ = ast_create(EXPR_GT, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | desig_expr TOKEN_MAIOR_IGUAL add_expr {
+        $$ = ast_create(EXPR_GE, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | desig_expr TOKEN_MENOR_IGUAL add_expr {
+        $$ = ast_create(EXPR_LE, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | add_expr {
+        $$ = $1;
+    }
     ;
 
 add_expr:
-    add_expr TOKEN_SOMA mul_expr
-    | add_expr TOKEN_SUBTRACAO mul_expr
-    | mul_expr
+    add_expr TOKEN_SOMA mul_expr {
+        $$ = ast_create(EXPR_ADD, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | add_expr TOKEN_SUBTRACAO mul_expr {
+        $$ = ast_create(EXPR_SUB, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | mul_expr { $$ = $1; }
     ;
 
 mul_expr:
-    mul_expr TOKEN_MULTIPLICACAO un_expr
-    | mul_expr TOKEN_DIVISAO un_expr
-    | un_expr
+    mul_expr TOKEN_MULTIPLICACAO un_expr {
+        $$ = ast_create(EXPR_MUL, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | mul_expr TOKEN_DIVISAO un_expr {
+        $$ = ast_create(EXPR_DIV, NULL, 0, $1, $3, NULL, @1.first_line);
+    }
+    | un_expr { $$ = $1; }
     ;
 
 un_expr:
-    TOKEN_SUBTRACAO prim_expr
-    | TOKEN_NEGACAO prim_expr
-    | prim_expr
+    TOKEN_SUBTRACAO prim_expr {
+        $$ = ast_create(EXPR_SUB, NULL, 1, NULL, $2, NULL, @1.first_line);
+    }
+    | TOKEN_NEGACAO prim_expr {
+        $$ = ast_create(EXPR_NOT, NULL, 0, NULL, $2, NULL, @1.first_line);
+    }
+    | prim_expr { $$ = $1; }
     ;
 
 prim_expr:
-    TOKEN_ID TOKEN_ABRE_PARENTESE lista_expr TOKEN_FECHA_PARENTESE
-    | TOKEN_ID TOKEN_ABRE_PARENTESE TOKEN_FECHA_PARENTESE
-    | TOKEN_ID
-    | TOKEN_STRING_LITERAL
-    | TOKEN_INT_LITERAL
-    | TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE
+    TOKEN_ID TOKEN_ABRE_PARENTESE lista_expr TOKEN_FECHA_PARENTESE {
+        $$ = ast_create(EXPR_FUNC_CALL, $1, 0, $3, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_ID TOKEN_ABRE_PARENTESE TOKEN_FECHA_PARENTESE {
+        $$ = ast_create(EXPR_FUNC_CALL, $1, 0, NULL, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_ID {
+        $$ = ast_create(EXPR_VAR, $1, 0, NULL, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_STRING_LITERAL {
+        $$ = ast_create(EXPR_STRING_LITERAL, $1, 0, NULL, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_INT_LITERAL {
+        $$ = ast_create(EXPR_INT_LITERAL, NULL, $1, NULL, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE {
+        $$ = $2;
+    }
     ;
 
 lista_expr:
-    expr
-    | lista_expr TOKEN_VIRGULA expr
+    expr {
+        $$ = $1;
+    }
+    | lista_expr TOKEN_VIRGULA expr {
+        $$ = ast_create(EXPR_ARG, NULL, 0, $1, $3, NULL, @2.first_line);
+    }
     ;
 
 %%

@@ -60,6 +60,9 @@ void ast_print(ASTNode *node, int depth) {
         "STMT_IF_ELSE",
         "STMT_WHILE",
         "EXPR_ASSIGN",
+        "EXPR_FUNC_CALL",
+        "EXPR_VAR",
+        "EXPR_ARG",
         "EXPR_ADD",
         "EXPR_SUB",
         "EXPR_MUL",
@@ -72,6 +75,7 @@ void ast_print(ASTNode *node, int depth) {
         "EXPR_GT",
         "EXPR_LE",
         "EXPR_GE",
+        "EXPR_NOT",
         "EXPR_INT_LITERAL",
         "EXPR_STRING_LITERAL"
     };

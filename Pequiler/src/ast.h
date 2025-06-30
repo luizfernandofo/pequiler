@@ -23,6 +23,9 @@ typedef enum {
     STMT_WHILE,
 
     EXPR_ASSIGN,
+    EXPR_FUNC_CALL,
+    EXPR_VAR,
+    EXPR_ARG,
 
     EXPR_ADD,
     EXPR_SUB,
@@ -38,6 +41,7 @@ typedef enum {
     EXPR_GT,
     EXPR_LE,
     EXPR_GE,
+    EXPR_NOT,
 
     EXPR_INT_LITERAL,
     EXPR_STRING_LITERAL,
