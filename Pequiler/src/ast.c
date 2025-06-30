@@ -4,9 +4,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-extern int yylineno;
 
-ASTNode *ast_create(ASTNodeType type, char *text, int ival, ASTNode *left, ASTNode *right, ASTNode *stmt_body) {
+ASTNode *ast_create(ASTNodeType type, char *text, int ival, ASTNode *left, ASTNode *right, ASTNode *stmt_body, int line) {
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         fprintf(stderr, "Erro: falha ao alocar memória para ASTNode\n");
@@ -14,9 +13,11 @@ ASTNode *ast_create(ASTNodeType type, char *text, int ival, ASTNode *left, ASTNo
     }
     
     node->type = type;
-    node->text = text; // Não fazer strdup aqui, o texto já vem duplicado do parser
+    node->text = NULL;
+    if (text && *text)
+        node->text = text;
     node->ival = ival;
-    node->line = yylineno;
+    node->line = line;
     node->left = left;
     node->right = right;
     node->stmt_body = stmt_body;
@@ -45,6 +46,7 @@ void ast_print(ASTNode *node, int depth) {
         "DECL_PROGRAMA",
         "DECL_VAR",
         "DECL_FUNC",
+        "DECL_FUNC_DETAILS",
         "DECL_ARG",
         "DECL_BLOCO",
         "TYPE_INT",
@@ -53,6 +55,7 @@ void ast_print(ASTNode *node, int depth) {
         "STMT_RETURN",
         "STMT_READ",
         "STMT_WRITE",
+        "STMT_WRITE_LITERAL",
         "STMT_NEWLINE",
         "STMT_IF_ELSE",
         "STMT_WHILE",
@@ -74,12 +77,13 @@ void ast_print(ASTNode *node, int depth) {
     };
     const int num_tokens = sizeof(token_names) / sizeof(token_names[0]);
     if (node->type >= 0 && node->type < num_tokens) {
-        printf("Type: %s", token_names[node->type]);
+        printf("%s", token_names[node->type]);
     } else {
-        printf("Type: %d", node->type);
+        printf("%d", node->type);
     }
-    if (node->text) printf(", Text: %s", node->text);
-    printf(", Ival: %d, Line: %d\n", node->ival, node->line);
+    if (node->text) printf(", %s", node->text);
+    if (node->ival != 0) printf(", %d", node->ival);
+    printf(", Line: %d\n", node->line);
 
     if (node->left) {
         ast_print(node->left, depth + 1);

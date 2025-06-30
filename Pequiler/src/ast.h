@@ -6,6 +6,7 @@ typedef enum {
     DECL_PROGRAMA,
     DECL_VAR,
     DECL_FUNC,
+    DECL_FUNC_DETAILS,
     DECL_ARG,
     DECL_BLOCO,
 
@@ -16,6 +17,7 @@ typedef enum {
     STMT_RETURN,
     STMT_READ,
     STMT_WRITE,
+    STMT_WRITE_LITERAL,
     STMT_NEWLINE,
     STMT_IF_ELSE,
     STMT_WHILE,
@@ -58,7 +60,8 @@ typedef struct ASTNode {
 ASTNode *ast_create(ASTNodeType type, 
     char *text, int ival, 
     ASTNode *left, ASTNode *right, 
-    ASTNode *stmt_body
+    ASTNode *stmt_body,
+    int line
 );
 
 void ast_free(ASTNode *node);

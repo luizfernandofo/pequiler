@@ -1,6 +1,9 @@
 %require "3.8"
 %debug
 
+%define parse.error verbose
+%locations
+
 %code requires {
 #include "ast.h"
 }
@@ -44,74 +47,111 @@ extern int yylineno;
 %%
 
 programa:
-    decl_func_var decl_prog { ast_root = ast_create(DECL_BEGIN_PROG, NULL, 0, $1, NULL, $2); $$ = ast_root; }
+    decl_func_var decl_prog { ast_root = ast_create(DECL_BEGIN_PROG, NULL, 0, $1, NULL, $2, @1.first_line); $$ = ast_root; }
     ;
 
 decl_func_var:
     %empty { $$ = NULL; }
     | tipo TOKEN_ID decl_var TOKEN_PONTO_VIRGULA decl_func_var {
-        printf("Declaring function variable: %s\n", $2);
-        ASTNode *var = ast_create(DECL_VAR, $2, 0, $1, $3, NULL);
-        $$ = ast_create(STMT_DECL, NULL, 0, var, $5, NULL);
+        ASTNode *var = ast_create(DECL_VAR, $2, 0, $1, $3, NULL, @2.first_line);
+        $$ = ast_create(STMT_DECL, NULL, 0, var, $5, NULL, @2.first_line);
     }
 
-    | tipo TOKEN_ID decl_func decl_func_var
+    | tipo TOKEN_ID decl_func decl_func_var {
+        ASTNode *func = ast_create(DECL_FUNC, $2, 0, $1, NULL, $3, @2.first_line);
+        $$ = ast_create(STMT_DECL, NULL, 0, func, $4, NULL, @2.first_line);
+    }
     ;
 
 decl_prog:
-    TOKEN_PROGRAMA bloco
+    TOKEN_PROGRAMA bloco {
+        $$ = ast_create(DECL_PROGRAMA, NULL, 0, NULL, NULL, $2, @1.first_line);
+    }
     ;
 
 decl_var:
-    %empty
-    | TOKEN_VIRGULA TOKEN_ID decl_var
+    %empty { $$ = NULL; }
+    | TOKEN_VIRGULA TOKEN_ID decl_var {
+        $$ = ast_create(DECL_VAR, $2, 0, NULL, $3, NULL, @2.first_line);
+    }
     ;
 
 decl_func:
-    TOKEN_ABRE_PARENTESE lista_param TOKEN_FECHA_PARENTESE bloco
+    TOKEN_ABRE_PARENTESE lista_param TOKEN_FECHA_PARENTESE bloco {
+        $$ = ast_create(DECL_FUNC_DETAILS, NULL, 0, $2, NULL, $4, @1.first_line);
+    }
     ;
 
 lista_param:
-    %empty
-    | lista_param_cont
+    %empty { $$ = NULL; }
+    | lista_param_cont {
+        $$ = $1;
+    }
     ;
 
 lista_param_cont:
-    tipo TOKEN_ID
-    | tipo TOKEN_ID TOKEN_VIRGULA lista_param_cont
+    tipo TOKEN_ID {
+        $$ = ast_create(DECL_ARG, $2, 0, $1, NULL, NULL, @2.first_line);
+    }
+    | tipo TOKEN_ID TOKEN_VIRGULA lista_param_cont {
+        $$ = ast_create(DECL_ARG, $2, 0, $1, $4, NULL, @2.first_line);
+    }
     ;
 
-bloco:
-    TOKEN_ABRE_CHAVE lista_decl_var lista_comando TOKEN_FECHA_CHAVE
+bloco: // ih ih
+    TOKEN_ABRE_CHAVE lista_decl_var lista_comando TOKEN_FECHA_CHAVE {
+        $$ = ast_create(DECL_BLOCO, NULL, 0, $2, $3, NULL, @1.first_line);
+    }
     ;
 
 lista_decl_var:
-    %empty
-    | tipo TOKEN_ID decl_var TOKEN_PONTO_VIRGULA lista_decl_var
+    %empty { $$ = NULL; }
+    | tipo TOKEN_ID decl_var TOKEN_PONTO_VIRGULA lista_decl_var {
+        ASTNode *var = ast_create(DECL_VAR, $2, 0, $1, $3, NULL, @2.first_line);
+        $$ = ast_create(STMT_DECL, NULL, 0, var, $5, NULL, @2.first_line);
+    }
     ;
 
 tipo:
-    TOKEN_INT
-    | TOKEN_CAR
+    TOKEN_INT { $$ = ast_create(TYPE_INT, NULL, 0, NULL, NULL, NULL, @1.first_line); }
+    | TOKEN_CAR { $$ = ast_create(TYPE_CAR, NULL, 0, NULL, NULL, NULL, @1.first_line); }
     ;
 
 lista_comando:
-    comando
-    | comando lista_comando
+    comando { $$ = $1; }
+    | comando lista_comando { $1->right = $2; $$ = $1; }
     ;
 
 comando:
-    TOKEN_PONTO_VIRGULA
-    | expr TOKEN_PONTO_VIRGULA
-    | TOKEN_RETORNE expr TOKEN_PONTO_VIRGULA
-    | TOKEN_LEIA TOKEN_ID TOKEN_PONTO_VIRGULA
-    | TOKEN_ESCREVA expr TOKEN_PONTO_VIRGULA
-    | TOKEN_ESCREVA TOKEN_STRING_LITERAL TOKEN_PONTO_VIRGULA
-    | TOKEN_NOVALINHA TOKEN_PONTO_VIRGULA
-    | TOKEN_SE TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE TOKEN_ENTAO comando
-    | TOKEN_SE TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE TOKEN_ENTAO comando TOKEN_SENAO comando
-    | TOKEN_ENQUANTO TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE TOKEN_EXECUTE comando
-    | bloco
+    TOKEN_PONTO_VIRGULA { $$ = NULL;}
+    | expr TOKEN_PONTO_VIRGULA {
+        $$ = $1;
+    }
+    | TOKEN_RETORNE expr TOKEN_PONTO_VIRGULA {
+        $$ = ast_create(STMT_RETURN, NULL, 0, $2, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_LEIA TOKEN_ID TOKEN_PONTO_VIRGULA {
+        $$ = ast_create(STMT_READ, $2, 0, NULL, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_ESCREVA expr TOKEN_PONTO_VIRGULA {
+        $$ = ast_create(STMT_WRITE, NULL, 0, $2, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_ESCREVA TOKEN_STRING_LITERAL TOKEN_PONTO_VIRGULA {
+        $$ = ast_create(STMT_WRITE_LITERAL, $2, 0, NULL, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_NOVALINHA TOKEN_PONTO_VIRGULA {
+        $$ = ast_create(STMT_NEWLINE, NULL, 0, NULL, NULL, NULL, @1.first_line);
+    }
+    | TOKEN_SE TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE TOKEN_ENTAO comando {
+        $$ = ast_create(STMT_IF_ELSE, NULL, 0, $6, NULL, $3, @1.first_line);
+    }
+    | TOKEN_SE TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE TOKEN_ENTAO comando TOKEN_SENAO comando {
+        $$ = ast_create(STMT_IF_ELSE, NULL, 0, $6, $8, $3, @1.first_line);
+    }
+    | TOKEN_ENQUANTO TOKEN_ABRE_PARENTESE expr TOKEN_FECHA_PARENTESE TOKEN_EXECUTE comando {
+        $$ = ast_create(STMT_WHILE, NULL, 0, $6, NULL, $3, @1.first_line);
+    }
+    | bloco { $$ = $1; }
     ;
 
 expr:
