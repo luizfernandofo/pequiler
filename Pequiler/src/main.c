@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "symbol_table.h"
 
 extern int yyparse();
 extern FILE *yyin;
 extern ASTNode *ast_root;
+extern SymbolTable *symbol_table;
 
 int main(int argc, char **argv)
 {
@@ -25,8 +27,13 @@ int main(int argc, char **argv)
     }
 
     if (ast_root) {
-        ast_print(ast_root, 0);
+        //ast_print(ast_root, 0);
         ast_free(ast_root);
+    }
+
+    if (symbol_table) {
+        print_symbol_table(symbol_table);
+        free_symbol_table(symbol_table);
     }
 
     fclose(yyin);

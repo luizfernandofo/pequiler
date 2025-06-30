@@ -13,8 +13,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ast.h"
+#include "symbol_table.h"
+
+SymbolTable *create_symbol_table();
+TableEntry *create_table_entry(const char *name, SymbolType symbol_type, int type);
+TableEntry* check_if_var_exists_in_current_scope(SymbolTable *table, const char *name);
+TableEntry* check_if_func_exists_in_current_scope(SymbolTable *table, const char *name);
+TableEntry* add_var_to_current_scope(SymbolTable *table, const char *name, int type);
+TableEntry* add_func_to_current_scope(SymbolTable *table, const char *name, int type);
+void add_arg_to_function(TableEntry *func, TableEntry *arg);
+void free_symbol_table(SymbolTable *table);
+void create_new_scope(SymbolTable *table);
 
 ASTNode *ast_root = NULL;
+SymbolTable *symbol_table = NULL;
 
 void yyerror(const char *s);
 
@@ -47,18 +59,54 @@ extern int yylineno;
 %%
 
 programa:
-    decl_func_var decl_prog { ast_root = ast_create(DECL_BEGIN_PROG, NULL, 0, $1, NULL, $2, @1.first_line); $$ = ast_root; }
+    { symbol_table = create_symbol_table(); }
+    decl_func_var decl_prog { ast_root = ast_create(DECL_BEGIN_PROG, NULL, 0, $2, NULL, $3, @2.first_line); $$ = ast_root; }
     ;
 
 decl_func_var:
     %empty { $$ = NULL; }
     | tipo TOKEN_ID decl_var TOKEN_PONTO_VIRGULA decl_func_var {
         ASTNode *var = ast_create(DECL_VAR, $2, 0, $1, $3, NULL, @2.first_line);
+
+        TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, $2);
+        if (existing_var != NULL) {
+            printf("Variável '%s' já declarada no escopo atual\n", $2);
+            return 0;
+        }
+        else {
+            TableEntry* first_var_in_queue = add_var_to_current_scope(symbol_table, $2, $1->type);
+
+            ASTNode *var = $3;
+            while (var != NULL) {
+                TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, var->text);
+                if (existing_var != NULL) {
+                    printf("Variável '%s' já declarada no escopo atual\n", $2);
+                    return 0;
+                }
+                else {
+                    add_var_to_current_scope(symbol_table, var->text, first_var_in_queue->type);
+                }
+                var = var->right;
+            }
+        }
+
         $$ = ast_create(STMT_DECL, NULL, 0, var, $5, NULL, @2.first_line);
     }
 
     | tipo TOKEN_ID decl_func decl_func_var {
         ASTNode *func = ast_create(DECL_FUNC, $2, 0, $1, NULL, $3, @2.first_line);
+
+        TableEntry *existing_func = check_if_func_exists_in_current_scope(symbol_table, $2);
+        if (existing_func != NULL) {
+            printf("Função '%s' já declarada no escopo atual\n", $2);
+            return 0;
+        }
+        else {
+            TableEntry* first_func_in_queue = add_func_to_current_scope(symbol_table, $2, $1->type);
+            
+            ASTNode *func = $3;
+        }
+
         $$ = ast_create(STMT_DECL, NULL, 0, func, $4, NULL, @2.first_line);
     }
     ;
@@ -98,7 +146,7 @@ lista_param_cont:
     }
     ;
 
-bloco: // ih ih
+bloco:
     TOKEN_ABRE_CHAVE lista_decl_var lista_comando TOKEN_FECHA_CHAVE {
         $$ = ast_create(DECL_BLOCO, NULL, 0, $2, $3, NULL, @1.first_line);
     }
