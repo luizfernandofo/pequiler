@@ -2,6 +2,10 @@
 
 Este projeto implementa um compilador para a linguagem Goianinha.
 
+## Pré-requisitos
+
+Certifique-se de que você tem o **Flex** e o **Bison** instalados em sua máquina antes de compilar o projeto.
+
 ## Como compilar
 
 Navegue até o diretório `src` e execute o comando abaixo para compilar o projeto:
