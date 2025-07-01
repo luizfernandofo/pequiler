@@ -33,7 +33,8 @@ int main(int argc, char **argv)
 
     if (symbol_table) {
         print_symbol_table(symbol_table);
-        free_symbol_table(symbol_table);
+        free_scope_entry_subtree(symbol_table, symbol_table->head->next);
+        free(symbol_table);
     }
 
     fclose(yyin);

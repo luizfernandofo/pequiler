@@ -67,9 +67,9 @@ TableEntry* add_func_to_current_scope(SymbolTable *table, const char *name, int 
     return entry;
 }
 
-TableEntry *get_last_func_in_current_scope(SymbolTable *table) {
-    if (!table || !table->current_scope) return NULL;
-    TableEntry *func = table->current_scope->funcs;
+TableEntry *get_last_func_inserted(SymbolTable *table) {
+    if (!table || !table->head) return NULL;
+    TableEntry *func = table->head->funcs;
     if (!func) return NULL;
     while (func->next) {
         func = func->next;
@@ -95,9 +95,13 @@ void add_arg_to_function(TableEntry *func, TableEntry *arg) {
     func->args = arg;
 }
 
-void free_symbol_table(SymbolTable *table) {
-    if (!table) return;
-    ScopeEntry *scope = table->head;
+void free_scope_entry_subtree(SymbolTable *table, ScopeEntry *scope) {
+    if (!scope) return;
+    scope->previous->next = NULL;
+    // Se o escopo atual for o current_scope, atualiza o current_scope
+    if (scope == table->current_scope) {
+        table->current_scope = scope->previous;
+    }    
     while (scope) {
         
         TableEntry *var = scope->vars;
@@ -127,7 +131,6 @@ void free_symbol_table(SymbolTable *table) {
         free(scope);
         scope = next_scope;
     }
-    free(table);
 }
 
 const char* symbol_type_to_str(SymbolType type) {
