@@ -73,7 +73,7 @@ decl_func_var:
 
         TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, $2);
         if (existing_var != NULL) {
-            printf("Variável '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
+            printf("ERRO: Variável '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
             return 0;
         }
         else {
@@ -83,7 +83,7 @@ decl_func_var:
             while (var != NULL) {
                 TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, var->text);
                 if (existing_var != NULL) {
-                    printf("Variável '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
+                    printf("ERRO: Variável '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
                     return 0;
                 }
                 else {
@@ -99,7 +99,7 @@ decl_func_var:
     | tipo TOKEN_ID {
         TableEntry *existing_func = check_if_func_exists_in_current_scope(symbol_table, $2);
         if (existing_func != NULL) {
-            printf("Função '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
+            printf("ERRO: Função '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
             return 0;
         }
         else {
@@ -144,7 +144,7 @@ lista_param_cont:
         TableEntry *last_inserted_func = get_last_func_inserted(symbol_table);
         TableEntry *existing_arg = check_if_arg_exists_in_func(last_inserted_func, $2);
         if (existing_arg != NULL) {
-            printf("Argumento '%s' já declarado na função '%s'. Linha: %d\n", $2, last_inserted_func->name, @2.first_line);
+            printf("ERRO: Argumento '%s' já declarado na função '%s'. Linha: %d\n", $2, last_inserted_func->name, @2.first_line);
             return 0;
         }
         TableEntry *arg = create_table_entry($2, ST_ARG, $1->type);
@@ -157,7 +157,7 @@ lista_param_cont:
         TableEntry *last_inserted_func = get_last_func_inserted(symbol_table);
         TableEntry *existing_arg = check_if_arg_exists_in_func(last_inserted_func, $2);
         if (existing_arg != NULL) {
-            printf("Argumento '%s' já declarado na função '%s'. Linha: %d\n", $2, last_inserted_func->name, @2.first_line);
+            printf("ERRO: Argumento '%s' já declarado na função '%s'. Linha: %d\n", $2, last_inserted_func->name, @2.first_line);
             return 0;
         }
         TableEntry *arg = create_table_entry($2, ST_ARG, $1->type);
@@ -184,14 +184,14 @@ lista_decl_var:
         if (!inside_program) {
             TableEntry *last_inserted_func = get_last_func_inserted(symbol_table);
             if (check_if_arg_exists_in_func(last_inserted_func, $2)) {
-                printf("Variável '%s' já foi declarada como argumento da função '%s'. Linha: %d\n", $2, last_inserted_func->name, @2.first_line);
+                printf("ERRO: Variável '%s' já foi declarada como argumento da função '%s'. Linha: %d\n", $2, last_inserted_func->name, @2.first_line);
                 return 0;
             }
         }
 
         TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, $2);
         if (existing_var != NULL) {
-            printf("Variável '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
+            printf("ERRO: Variável '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
             return 0;
         }
         else {
@@ -201,7 +201,7 @@ lista_decl_var:
             while (var != NULL) {
                 TableEntry *existing_var = check_if_var_exists_in_current_scope(symbol_table, var->text);
                 if (existing_var != NULL) {
-                    printf("Variável '%s' já declarada no escopo atual\n", $2);
+                    printf("ERRO: Variável '%s' já declarada no escopo atual\n", $2);
                     return 0;
                 }
                 else {
