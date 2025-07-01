@@ -2,6 +2,8 @@
 
 Este projeto implementa um compilador para a linguagem Goianinha.
 
+O nome **Pequiler** é uma junção de "**pequi**", uma comida típica do estado de Goiás (já que a linguagem se chama Goianinha), e o sufixo "**-ler**" de "compiler" (compilador em inglês).
+
 ## Pré-requisitos
 
 Certifique-se de que você tem o **Flex** e o **Bison** instalados em sua máquina antes de compilar o projeto.
