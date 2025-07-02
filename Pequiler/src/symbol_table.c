@@ -41,9 +41,9 @@ TableEntry* check_if_var_exists_in_current_scope(SymbolTable *table, const char 
     return NULL;
 }
 
-TableEntry* check_if_func_exists_in_current_scope(SymbolTable *table, const char *name) {
-    if (!table || !table->current_scope) return NULL;
-    TableEntry *func = table->current_scope->funcs;
+TableEntry* check_if_func_exists(SymbolTable *table, const char *name) {
+    if (!table || !table->head) return NULL;
+    TableEntry *func = table->head->funcs;
     while (func) {
         if (strcmp(func->name, name) == 0) return func;
         func = func->next;

@@ -18,7 +18,7 @@
 SymbolTable *create_symbol_table();
 TableEntry *create_table_entry(const char *name, SymbolType symbol_type, int type);
 TableEntry* check_if_var_exists_in_current_scope(SymbolTable *table, const char *name);
-TableEntry* check_if_func_exists_in_current_scope(SymbolTable *table, const char *name);
+TableEntry* check_if_func_exists(SymbolTable *table, const char *name);
 TableEntry* add_var_to_current_scope(SymbolTable *table, const char *name, int type);
 TableEntry* add_func_to_current_scope(SymbolTable *table, const char *name, int type);
 TableEntry *get_last_func_inserted(SymbolTable *table);
@@ -97,7 +97,7 @@ decl_func_var:
     }
 
     | tipo TOKEN_ID {
-        TableEntry *existing_func = check_if_func_exists_in_current_scope(symbol_table, $2);
+        TableEntry *existing_func = check_if_func_exists(symbol_table, $2);
         if (existing_func != NULL) {
             printf("ERRO: Função '%s' já declarada no escopo atual. Linha: %d\n", $2, @2.first_line);
             return 0;
@@ -301,6 +301,15 @@ desig_expr:
     }
     | add_expr {
         $$ = $1;
+
+        // switch ($1->type) {
+        //     case EXPR_ADD:
+        //     case EXPR_SUB:
+        //     case EXPR_MUL:
+        //     case EXPR_DIV:
+        //         if ($1->left )
+        //         return 0;
+        // }
     }
     ;
 
@@ -335,10 +344,22 @@ un_expr:
     ;
 
 prim_expr:
-    TOKEN_ID TOKEN_ABRE_PARENTESE lista_expr TOKEN_FECHA_PARENTESE {
-        $$ = ast_create(EXPR_FUNC_CALL, $1, 0, $3, NULL, NULL, @1.first_line);
+    TOKEN_ID {
+        if (check_if_func_exists(symbol_table, $1) == NULL) {
+            printf("ERRO: Função '%s' desconhecida. Linha: %d\n", $1, @1.first_line);
+            return 0;
+        }
     }
-    | TOKEN_ID TOKEN_ABRE_PARENTESE TOKEN_FECHA_PARENTESE {
+    TOKEN_ABRE_PARENTESE lista_expr TOKEN_FECHA_PARENTESE {
+        $$ = ast_create(EXPR_FUNC_CALL, $1, 0, $4, NULL, NULL, @1.first_line);
+    }
+
+    | TOKEN_ID {
+        if (check_if_func_exists(symbol_table, $1) == NULL) {
+            printf("ERRO: Função '%s' desconhecida. Linha: %d\n", $1, @1.first_line);
+            return 0;
+        }
+    } TOKEN_ABRE_PARENTESE TOKEN_FECHA_PARENTESE {
         $$ = ast_create(EXPR_FUNC_CALL, $1, 0, NULL, NULL, NULL, @1.first_line);
     }
     | TOKEN_ID {

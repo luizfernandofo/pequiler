@@ -31,7 +31,7 @@ typedef struct SymbolTable {
 SymbolTable *create_symbol_table();
 TableEntry *create_table_entry(const char *name, SymbolType symbol_type, int type);
 TableEntry *check_if_var_exists_in_current_scope(SymbolTable *table, const char *name);
-TableEntry *check_if_func_exists_in_current_scope(SymbolTable *table, const char *name);
+TableEntry *check_if_func_exists(SymbolTable *table, const char *name);
 TableEntry *add_var_to_current_scope(SymbolTable *table, const char *name, int type);
 TableEntry *add_func_to_current_scope(SymbolTable *table, const char *name, int type);
 TableEntry *get_last_func_inserted(SymbolTable *table);
