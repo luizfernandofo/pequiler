@@ -41,6 +41,21 @@ TableEntry* check_if_var_exists_in_current_scope(SymbolTable *table, const char 
     return NULL;
 }
 
+TableEntry* check_if_var_exists_in_any_scope_from_top_of_stack(SymbolTable *table, const char *name) {
+    if (!table || !table->current_scope) return NULL;
+    TableEntry *var = NULL;
+    ScopeEntry *scope = table->current_scope;
+    while (scope) {
+        var = scope->vars;
+        while (var) {
+            if (strcmp(var->name, name) == 0) return var;
+            var = var->next;
+        }
+        scope = scope->previous;
+    }
+    return NULL;
+}
+
 TableEntry* check_if_func_exists(SymbolTable *table, const char *name) {
     if (!table || !table->head) return NULL;
     TableEntry *func = table->head->funcs;
