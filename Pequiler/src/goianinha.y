@@ -229,6 +229,14 @@ comando:
         $$ = $1;
     }
     | TOKEN_RETORNE expr TOKEN_PONTO_VIRGULA {
+        TableEntry *last_inserted_func = get_last_func_inserted(symbol_table);
+        if (
+            (last_inserted_func->type == TYPE_CAR && $2->type != EXPR_STRING_LITERAL)
+            || ($2->type == EXPR_STRING_LITERAL && last_inserted_func->type != TYPE_CAR)
+            ) {
+            printf("ERRO: Retornando expressão com tipo incompatível com tipo definido da função '%s'. Linha: %d\n", last_inserted_func->name, @1.first_line);
+            return 0;
+        }
         $$ = ast_create(STMT_RETURN, NULL, 0, $2, NULL, NULL, @1.first_line);
     }
     | TOKEN_LEIA TOKEN_ID TOKEN_PONTO_VIRGULA {
@@ -280,6 +288,63 @@ expr:
         $$ = $1; 
     }
     | TOKEN_ID TOKEN_ATRIBUICAO expr {
+        if (inside_program == 0) {
+            TableEntry *last_inserted_func = get_last_func_inserted(symbol_table);
+
+            if (
+                check_if_arg_exists_in_func(last_inserted_func, $1) == NULL
+                && check_if_var_exists_in_any_scope_from_top_of_stack(symbol_table, $1) == NULL
+                ) {
+                printf("ERRO: Variável '%s' desconhecida. Linha: %d\n", $1, @1.first_line);
+                return 0;
+            }
+        }
+        else if(check_if_var_exists_in_any_scope_from_top_of_stack(symbol_table, $1) == NULL) {
+            printf("ERRO: Variável '%s' desconhecida. Linha: %d\n", $1, @1.first_line);
+            return 0;
+        }
+        
+        TableEntry *left_side_var = check_if_var_exists_in_any_scope_from_top_of_stack(symbol_table, $1);
+        if (inside_program == 0 && left_side_var == NULL) {
+            TableEntry *last_inserted_func = get_last_func_inserted(symbol_table);
+            left_side_var = check_if_arg_exists_in_func(last_inserted_func, $1);
+        } 
+
+        if ($3->type == EXPR_FUNC_CALL) {
+            TableEntry *func = check_if_func_exists(symbol_table, $3->text);
+            if (left_side_var->type == TYPE_CAR && func->type != TYPE_CAR) {
+                printf("ERRO: Tipo retornado pela função '%s' é incompatível com tipo da variável '%s'. Linha: %d\n", $3->text, $1, @1.first_line);
+                return 0;
+            }
+            else if (left_side_var->type != TYPE_CAR && func->type == TYPE_CAR) {
+                printf("ERRO: Tipo retornado pela função '%s' é incompatível com tipo da variável '%s'. Linha: %d\n", $3->text, $1, @1.first_line);
+                return 0;
+            }
+        }
+        else if ($3->type == EXPR_VAR) {
+            TableEntry *right_side_var = check_if_var_exists_in_any_scope_from_top_of_stack(symbol_table, $3->text);
+            if (right_side_var == NULL) {
+                printf("ERRO: Variável '%s' desconhecida. Linha: %d\n", $3->text, @1.first_line);
+                return 0;
+            }
+
+            if (left_side_var->type == TYPE_CAR && right_side_var->type != TYPE_CAR) {
+                printf("ERRO: Variável '%s' do tipo 'car' não pode receber valor de variável de tipo 'int'. Linha: %d\n", $1, @1.first_line);
+                return 0;
+            }
+            else if (left_side_var->type != TYPE_CAR && right_side_var->type == TYPE_CAR) {
+                printf("ERRO: Variável '%s' do tipo 'int' não pode receber valor de variável de tipo 'car'. Linha: %d\n", $1, @1.first_line);
+                return 0;
+            }
+        }
+        else if ($3->type != EXPR_STRING_LITERAL && left_side_var->type == TYPE_CAR) {
+            printf("ERRO: Atribuição de tipo incompatível para variávela '%s'. Linha: %d\n", $1, @1.first_line);
+            return 0;
+        }
+        else if ($3->type == EXPR_STRING_LITERAL && left_side_var->type != TYPE_CAR) {
+            printf("ERRO: Atribuição de tipo incompatível para variávele '%s'. Linha: %d\n", $1, @1.first_line);
+            return 0;
+        }
         $$ = ast_create(EXPR_ASSIGN, $1, 0, $3, NULL, NULL, @1.first_line);
     }
     ;
