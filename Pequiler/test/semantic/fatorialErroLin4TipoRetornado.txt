@@ -2,7 +2,7 @@
 int fatorial(int n){
 	se (n==0)
 	entao
-		retorne 'a'; /*Erro de tipo*/
+		retorne "a"; /*Erro de tipo*/
 	senao
 		retorne n* fatorial(n-1);
 }
