@@ -256,7 +256,29 @@ comando:
     ;
 
 expr:
-    or_expr { $$ = $1; }
+    or_expr { 
+        switch ($1->type) {
+            case EXPR_OR:
+            case EXPR_AND:
+            case EXPR_EQ:
+            case EXPR_NEQ:
+            case EXPR_LT:
+            case EXPR_GT:
+            case EXPR_LE:
+            case EXPR_GE:
+            case EXPR_ADD:
+            case EXPR_SUB:
+            case EXPR_MUL:
+            case EXPR_DIV:
+                if($1->left->type == EXPR_STRING_LITERAL || $1->right->type == EXPR_STRING_LITERAL) {
+                    printf("ERRO: String não é um operando válido. Linha: %d\n", $1->left->line);
+                    return 0;
+                }
+            default:
+                break;
+        }
+        $$ = $1; 
+    }
     | TOKEN_ID TOKEN_ATRIBUICAO expr {
         $$ = ast_create(EXPR_ASSIGN, $1, 0, $3, NULL, NULL, @1.first_line);
     }
@@ -301,15 +323,6 @@ desig_expr:
     }
     | add_expr {
         $$ = $1;
-
-        // switch ($1->type) {
-        //     case EXPR_ADD:
-        //     case EXPR_SUB:
-        //     case EXPR_MUL:
-        //     case EXPR_DIV:
-        //         if ($1->left )
-        //         return 0;
-        // }
     }
     ;
 
